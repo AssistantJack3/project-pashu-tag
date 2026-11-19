@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PashuTag — Live Interactive Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #eef7f1; }
+    .phone-frame {
+      box-shadow: 0 25px 50px -12px rgba(15, 61, 38, 0.25), 0 0 0 10px #1e293b;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      70% { transform: scale(1.15); opacity: 0; }
+      100% { transform: scale(0.95); opacity: 0; }
+    }
+    .animate-pulse-ring { animation: pulse-ring 1.6s infinite; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-[#124729] text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center font-extrabold text-slate-900 text-lg shadow">
+          QR
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg leading-tight tracking-tight">PashuTag <span class="text-xs font-medium bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded-full ml-1">Live Code Demo</span></h1>
+          <p class="text-xs text-emerald-200">Stray & Livestock Rescue ID — No App Install Needed</p>
+        </div>
+      </div>
+
+      <!-- View Switcher Tabs -->
+      <nav class="flex bg-[#0c331d] p-1 rounded-xl gap-1">
+        <button onclick="switchTab('scan')" id="tab-scan" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-amber-500 text-slate-900 transition">
+          1. Live Scan & Rescue
+        </button>
+        <button onclick="switchTab('herd')" id="tab-herd" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-emerald-100 hover:bg-emerald-900 transition">
+          2. Herd Dashboard
+        </button>
+        <button onclick="switchTab('register')" id="tab-register" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-emerald-100 hover:bg-emerald-900 transition">
+          3. Issue New QR Tag
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-6xl mx-auto w-full px-4 py-6 flex-1">
+
+    <!-- ==================== TAB 1: LIVE SCAN & RESCUE DEMO ==================== -->
+    <section id="view-scan" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left Column: Collar Tag & Code Feature Walkthrough -->
+      <div class="lg:col-span-5 space-y-5">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">Physical Collar Tag</span>
+            <select id="animal-selector" onchange="selectAnimal(this.value)" class="text-xs font-semibold border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:outline-none focus:border-emerald-600">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Visual Collar Tag Card -->
+          <div class="bg-[#124729] rounded-2xl p-5 text-center text-white relative overflow-hidden">
+            <div class="w-24 h-6 border-4 border-slate-400 rounded-t-full mx-auto -mb-2 opacity-80"></div>
+            <div class="bg-amber-500 p-3.5 rounded-2xl inline-block shadow-lg">
+              <div id="qrcode-box" class="bg-white p-2 rounded-lg"></div>
+            </div>
+            <p id="tag-id-label" class="mt-3 font-mono text-xs text-amber-300 font-bold tracking-wider">TAG-ID: PT-101-SIGNED</p>
+            <p class="text-[11px] text-emerald-200 mt-1">Offline Payload Embedded • Works Without Internet</p>
+            
+            <button onclick="simulateScan()" class="mt-4 w-full bg-white text-[#124729] hover:bg-amber-50 font-bold py-2.5 px-4 rounded-xl text-sm shadow transition flex items-center justify-center gap-2">
+              <span>📷</span> Simulate Camera Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- Core Code Features Pill Grid -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Active Code Modules</h3>
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <p class="font-bold text-emerald-900">🔒 Masked Calling</p>
+              <p class="text-slate-600 mt-0.5">Owner number stays private via proxy bridge.</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <p class="font-bold text-emerald-900">📍 Auto GPS Dispatch</p>
+              <p class="text-slate-600 mt-0.5">1-tap sends coordinates to nearest vet.</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <p class="font-bold text-emerald-900">💉 Vaccine Ledger</p>
+              <p class="text-slate-600 mt-0.5">FMD & Rabies records + auto reminders.</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <p class="font-bold text-emerald-900">🛡️ Misuse Guard</p>
+              <p class="text-slate-600 mt-0.5">Signed QR, scan logs & lost-tag kill switch.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Mobile Web App Screen -->
+      <div class="lg:col-span-7 flex flex-col items-center">
+        <div class="w-full max-w-[360px] bg-white rounded-[36px] phone-frame overflow-hidden border border-slate-200">
+          <!-- Phone Status Bar -->
+          <div class="bg-slate-900 text-white text-[11px] px-5 py-2 flex justify-between items-center">
+            <span class="font-semibold">pashutag.in/t/<span id="url-slug">pt-101</span></span>
+            <span class="text-emerald-400 font-bold">● PWA Instant Web</span>
+          </div>
+
+          <!-- Screen Content Area -->
+          <div id="phone-screen" class="p-5 min-h-[530px] flex flex-col justify-between bg-slate-50">
+            <!-- Dynamically rendered by JS -->
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-4 text-center">👆 Click <strong>Call Owner</strong> or <strong>EMERGENCY</strong> inside the phone screen to test live actions.</p>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: HIERARCHICAL HERD DASHBOARD ==================== -->
+    <section id="view-herd" class="hidden space-y-6">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">Total Tagged Herd</p>
+          <p id="stat-total" class="text-2xl font-extrabold text-[#124729] mt-1">4</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">Vaccination Up-to-Date</p>
+          <p id="stat-vax" class="text-2xl font-extrabold text-emerald-600 mt-1">75%</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">Total QR Scans Logged</p>
+          <p id="stat-scans" class="text-2xl font-extrabold text-amber-600 mt-1">19</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+          <p class="text-xs text-slate-500 font-medium">Tag Unit Cost (Scale)</p>
+          <p class="text-2xl font-extrabold text-slate-800 mt-1">₹20–50</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h2 class="font-bold text-lg text-slate-900">Gau-shala & Municipal Herd Registry</h2>
+            <p class="text-xs text-slate-500">Manage vaccination reminders, inspect scan logs, or block lost/stolen tags instantly.</p>
+          </div>
+          <button onclick="switchTab('register')" class="bg-[#124729] hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+            + Add Animal to Herd
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th class="py-3 px-4">Tag ID</th>
+                <th class="py-3 px-4">Animal, Age & Species</th>
+                <th class="py-3 px-4">Owner / Gau-shala</th>
+                <th class="py-3 px-4">Vaccine Status</th>
+                <th class="py-3 px-4">Tag Security</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="herd-table-body" class="divide-y divide-slate-100 text-sm">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: REGISTER NEW ANIMAL & GENERATE QR ==================== -->
+    <section id="view-register" class="hidden max-w-xl mx-auto">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-emerald-100">
+        <h2 class="font-bold text-xl text-[#124729]">Register Animal & Generate Signed QR</h2>
+        <p class="text-xs text-slate-500 mt-1">Creates an offline-readable QR payload and adds the animal to the live demo database.</p>
+
+        <form onsubmit="handleRegister(event)" class="mt-5 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Animal Name</label>
+              <input type="text" id="reg-name" required placeholder="e.g., Tommy" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Age</label>
+              <input type="text" id="reg-age" required placeholder="e.g., 2 yrs" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Species</label>
+              <select id="reg-species" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-600">
+                <option value="Cow">Cow (Cattle)</option>
+                <option value="Dog">Dog</option>
+                <option value="Buffalo">Buffalo</option>
+                <option value="Goat">Goat</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Owner Name</label>
+              <input type="text" id="reg-owner" required placeholder="e.g., Suresh Verma" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Gau-shala / Ward</label>
+              <input type="text" id="reg-gaushala" required placeholder="e.g., Shree Gopal Gau-shala" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Owner Phone (Will be Masked)</label>
+              <input type="text" id="reg-phone" required placeholder="+91 98765 43210" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Vaccination Record</label>
+              <select id="reg-vaccine" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-600">
+                <option value="FMD & Rabies: Done">FMD & Rabies: Done</option>
+                <option value="FMD: Done (Booster Due)">FMD: Done (Booster Due)</option>
+                <option value="Pending First Dose">Pending First Dose</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-[#124729] hover:bg-emerald-900 text-white font-bold py-3 rounded-xl text-sm shadow transition">
+            Generate QR Tag & Open Live Scan →
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Sample Database matching the PashuTag Prototype
+    let animals = [
+      {
+        id: "PT-101",
+        name: "Moti",
+        age: "4 yrs",
+        species: "Cow",
+        emoji: "🐄",
+        owner: "Ramesh K.",
+        gaushala: "Shree Gopal Gau-shala",
+        maskedPhone: "+91 98XXX-XX412",
+        vaccine: "FMD Vaccine: Done",
+        vaccineOk: true,
+        nextDue: "12 Mar 2027",
+        blocked: false,
+        scans: 7
+      },
+      {
+        id: "PT-102",
+        name: "Sheru",
+        age: "3 yrs",
+        species: "Dog",
+        emoji: "🐕",
+        owner: "Ananya Sharma",
+        gaushala: "Sector 62 RWA",
+        maskedPhone: "+91 99XXX-XX881",
+        vaccine: "Anti-Rabies: Done",
+        vaccineOk: true,
+        nextDue: "05 Jan 2027",
+        blocked: false,
+        scans: 5
+      },
+      {
+        id: "PT-103",
+        name: "Nandi",
+        age: "5 yrs",
+        species: "Bull",
+        emoji: "🐂",
+        owner: "Mahesh Yadav",
+        gaushala: "Shree Gopal Gau-shala",
+        maskedPhone: "+91 97XXX-XX109",
+        vaccine: "FMD Booster: Due Soon",
+        vaccineOk: false,
+        nextDue: "25 Nov 2026",
+        blocked: false,
+        scans: 4
+      },
+      {
+        id: "PT-104",
+        name: "Kalu",
+        age: "2 yrs",
+        species: "Dog",
+        emoji: "🐕‍🦺",
+        owner: "Municipal Stray Unit",
+        gaushala: "Ward 14 Rescue",
+        maskedPhone: "+91 91XXX-XX002",
+        vaccine: "ABC & Rabies: Done",
+        vaccineOk: true,
+        nextDue: "18 Aug 2027",
+        blocked: true,
+        scans: 3
+      }
+    ];
+
+    let selectedId = "PT-101";
+
+    // Tab Navigation
+    function switchTab(tabName) {
+      ['scan', 'herd', 'register'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.remove('bg-amber-500', 'text-slate-900');
+        btn.classList.add('text-emerald-100');
+      });
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      activeBtn.classList.add('bg-amber-500', 'text-slate-900');
+      activeBtn.classList.remove('text-emerald-100');
+
+      if (tabName === 'herd') renderHerdTable();
+    }
+
+    // Populate Dropdown & Render QR Code
+    function renderSelector() {
+      const sel = document.getElementById('animal-selector');
+      sel.innerHTML = animals.map(a =>
+        `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${a.id} • ${a.name} (${a.species})</option>`
+      ).join('');
+    }
+
+    function generateQR(animal) {
+      const box = document.getElementById('qrcode-box');
+      box.innerHTML = "";
+      const offlinePayload = [
+        `Animal name - ${animal.name}`,
+        `Age - ${animal.age}`,
+        `Species - ${animal.species}`,
+        `Owner name - ${animal.owner}`,
+        `Gaushala ya ward - ${animal.gaushala}`,
+        `Owner phone - ${animal.maskedPhone}`,
+        `Vaccination record - ${animal.vaccine}`
+      ].join("\r\n");
+
+      new QRCode(box, {
+        text: offlinePayload,
+        width: 132,
+        height: 132,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.L
+      });
+      document.getElementById('tag-id-label').textContent = `TAG-ID: ${animal.id}-SIGNED`;
+      document.getElementById('url-slug').textContent = animal.id.toLowerCase();
+    }
+
+    function selectAnimal(id) {
+      selectedId = id;
+      const animal = animals.find(a => a.id === id);
+      generateQR(animal);
+      renderProfileScreen(animal);
+    }
+
+    // Simulate Camera Scanning Animation
+    function simulateScan() {
+      const animal = animals.find(a => a.id === selectedId);
+      animal.scans += 1;
+      const screen = document.getElementById('phone-screen');
+      screen.innerHTML = `
+        <div class="flex-1 flex flex-col items-center justify-center text-center py-12">
+          <div class="w-24 h-24 rounded-2xl border-4 border-amber-500 flex items-center justify-center relative">
+            <span class="text-4xl">📷</span>
+            <div class="absolute inset-0 border-2 border-emerald-500 rounded-2xl animate-ping"></div>
+          </div>
+          <p class="mt-5 font-bold text-slate-800">Decoding Signed QR...</p>
+          <p class="text-xs text-slate-500 mt-1">Verifying offline payload & scan log</p>
+        </div>
+      `;
+      setTimeout(() => renderProfileScreen(animal), 650);
+    }
+
+    // Render Default Animal Web Profile inside Phone (Line by Line)
+    function renderProfileScreen(animal) {
+      const screen = document.getElementById('phone-screen');
+
+      if (animal.blocked) {
+        screen.innerHTML = `
+          <div class="flex-1 flex flex-col items-center justify-center text-center p-4">
+            <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-3xl mb-3">🛡️</div>
+            <span class="text-xs font-bold uppercase bg-amber-100 text-amber-800 px-3 py-1 rounded-full">Lost-Tag Protection Active</span>
+            <h2 class="text-lg font-extrabold text-slate-900 mt-3">Tag ${animal.id} Deactivated</h2>
+            <p class="text-xs text-slate-600 mt-2">This tag was marked lost by the owner/gau-shala to prevent misuse. Scan location has been logged.</p>
+            <button onclick="toggleBlock('${animal.id}')" class="mt-5 text-xs font-bold text-emerald-700 underline">Reactivate Tag in Demo</button>
+          </div>
+        `;
+        return;
+      }
+
+      screen.innerHTML = `
+        <div>
+          <!-- Top Brand Strip -->
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
+            <span class="font-extrabold text-[#124729] text-sm">PashuTag ID • ${animal.id}</span>
+            <span class="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">✓ Verified Tag</span>
+          </div>
+
+          <!-- Animal Avatar -->
+          <div class="text-center mt-3">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 mx-auto flex items-center justify-center text-3xl shadow-inner border-2 border-white">
+              ${animal.emoji}
+            </div>
+          </div>
+
+          <!-- Info Card (Line by Line Sequence) -->
+          <div class="bg-white rounded-2xl p-3.5 mt-3 border border-slate-200 space-y-1.5 text-xs shadow-sm font-medium">
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Animal name -</span> <strong class="text-slate-900">${animal.name}</strong></div>
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Age -</span> <strong class="text-slate-800">${animal.age}</strong></div>
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Species -</span> <strong class="text-slate-800">${animal.species}</strong></div>
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Owner name -</span> <strong class="text-slate-800">${animal.owner}</strong></div>
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Gaushala ya ward -</span> <strong class="text-slate-800">${animal.gaushala}</strong></div>
+            <div class="border-b border-slate-100 pb-1"><span class="text-slate-500">Owner phone -</span> <strong class="font-mono text-emerald-700">${animal.maskedPhone}</strong></div>
+            <div><span class="text-slate-500">Vaccination record -</span> <strong class="${animal.vaccineOk ? 'text-emerald-700' : 'text-amber-700'}">${animal.vaccine}</strong></div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 mt-4">
+          <button onclick="triggerMaskedCall('${animal.id}')" class="w-full bg-[#1b7a43] hover:bg-[#145c32] text-white font-bold py-2.5 px-4 rounded-xl text-sm shadow flex items-center justify-center gap-2 transition">
+            <span>📞</span> Call Owner (Masked)
+          </button>
+          <button onclick="triggerEmergency('${animal.id}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-md flex items-center justify-center gap-2 transition">
+            <span>🚨</span> EMERGENCY — Vet Ambulance
+          </button>
+        </div>
+      `;
+    }
+
+    // Masked Calling Flow
+    function triggerMaskedCall(id) {
+      const animal = animals.find(a => a.id === id);
+      const screen = document.getElementById('phone-screen');
+      screen.innerHTML = `
+        <div class="flex-1 flex flex-col justify-between text-center py-4">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-xs text-emerald-800 font-semibold">
+            🔒 Privacy Shield: Real phone numbers hidden
+          </div>
+          <div>
+            <div class="w-20 h-20 rounded-full bg-emerald-600 text-white mx-auto flex items-center justify-center text-3xl shadow-lg">📞</div>
+            <h3 class="text-lg font-extrabold text-slate-900 mt-4">Connecting Masked Call...</h3>
+            <p class="text-xs text-slate-500 mt-1">Owner: <strong>${animal.owner}</strong></p>
+            <p class="font-mono text-xs bg-slate-200 inline-block px-3 py-1 rounded-full mt-2 text-slate-700">${animal.maskedPhone}</p>
+          </div>
+          <button onclick="renderProfileScreen(animals.find(a => a.id === '${id}'))" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs">
+            End Call & Back to Profile
+          </button>
+        </div>
+      `;
+    }
+
+    // One-Tap Emergency Ambulance Dispatch Flow (Matches Slide 4)
+    function triggerEmergency(id) {
+      const animal = animals.find(a => a.id === id);
+      const screen = document.getElementById('phone-screen');
+
+      const renderAlert = (coordsText) => {
+        screen.innerHTML = `
+          <div class="flex-1 flex flex-col justify-between">
+            <div class="bg-red-600 text-white px-4 py-3 -mx-5 -mt-5 font-extrabold text-sm flex items-center justify-between">
+              <span>🚨 Alert Sent</span>
+              <span class="text-[11px] bg-red-800 px-2 py-0.5 rounded">PRIORITY DISPATCH</span>
+            </div>
+
+            <div class="text-center my-auto py-4">
+              <div class="relative inline-block">
+                <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-4xl mx-auto">🚑</div>
+              </div>
+              <h3 class="text-lg font-extrabold text-slate-900 mt-3">Vet ambulance notified</h3>
+              
+              <div class="mt-4 bg-white border border-slate-200 rounded-xl p-3 text-left space-y-2 text-xs">
+                <div class="flex items-center gap-2 text-red-600 font-bold">
+                  <span>📍</span> <span>Live location shared (${coordsText})</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-600">
+                  <span>💬</span> <span>Owner (${animal.owner}) notified by SMS & WhatsApp</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-600">
+                  <span>🩺</span> <span>Medical card (${animal.vaccine}) attached</span>
+                </div>
+              </div>
+
+              <div class="mt-4 bg-emerald-100 text-[#124729] font-extrabold py-2.5 px-4 rounded-xl text-base">
+                ETA: 8 min
+              </div>
+            </div>
+
+            <button onclick="renderProfileScreen(animals.find(a => a.id === '${id}'))" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 rounded-xl text-xs transition">
+              ← Back to Animal Profile
+            </button>
+          </div>
+        `;
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => renderAlert(`${pos.coords.latitude.toFixed(4)}°N, ${pos.coords.longitude.toFixed(4)}°E`),
+          () => renderAlert("28.4744°N, 77.5040°E"),
+          { timeout: 1500 }
+        );
+      } else {
+        renderAlert("28.4744°N, 77.5040°E");
+      }
+    }
+
+    // Herd Dashboard Table
+    function renderHerdTable() {
+      const tbody = document.getElementById('herd-table-body');
+      document.getElementById('stat-total').textContent = animals.length;
+      const vaxCount = animals.filter(a => a.vaccineOk).length;
+      document.getElementById('stat-vax').textContent = Math.round((vaxCount / animals.length) * 100) + "%";
+      document.getElementById('stat-scans').textContent = animals.reduce((sum, a) => sum + a.scans, 0);
+
+      tbody.innerHTML = animals.map(a => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-mono font-bold text-xs text-[#124729]">${a.id}</td>
+          <td class="py-3 px-4 font-semibold">${a.emoji} ${a.name} <span class="text-xs text-slate-400">(${a.age}, ${a.species})</span></td>
+          <td class="py-3 px-4 text-xs">
+            <div class="font-bold text-slate-800">${a.owner}</div>
+            <div class="text-slate-500">${a.gaushala}</div>
+          </td>
+          <td class="py-3 px-4 text-xs">
+            <span class="px-2 py-0.5 rounded font-semibold ${a.vaccineOk ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+              ${a.vaccine}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-xs">
+            <span class="px-2 py-0.5 rounded-full font-bold ${a.blocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
+              ${a.blocked ? 'Blocked (Lost)' : 'Active'}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button onclick="openInScanner('${a.id}')" class="text-xs font-bold text-emerald-700 hover:underline">Scan</button>
+            <button onclick="toggleBlock('${a.id}')" class="text-xs font-bold ${a.blocked ? 'text-blue-600' : 'text-red-600'} hover:underline">
+              ${a.blocked ? 'Unblock' : 'Block Tag'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openInScanner(id) {
+      selectAnimal(id);
+      renderSelector();
+      switchTab('scan');
+    }
+
+    function toggleBlock(id) {
+      const a = animals.find(item => item.id === id);
+      a.blocked = !a.blocked;
+      renderHerdTable();
+      if (selectedId === id) renderProfileScreen(a);
+    }
+
+    // Register New Animal Handler
+    function handleRegister(e) {
+      e.preventDefault();
+      const newNum = 101 + animals.length;
+      const newId = `PT-${newNum}`;
+      const species = document.getElementById('reg-species').value;
+      const emojiMap = { Cow: "🐄", Dog: "🐕", Buffalo: "🐃", Goat: "🐐" };
+      const vax = document.getElementById('reg-vaccine').value;
+      const rawPhone = document.getElementById('reg-phone').value.trim();
+      const masked = rawPhone.length >= 4 ? `+91 98XXX-XX${rawPhone.slice(-3)}` : "+91 98XXX-XX999";
+
+      const newAnimal = {
+        id: newId,
+        name: document.getElementById('reg-name').value.trim(),
+        age: document.getElementById('reg-age').value.trim(),
+        species,
+        emoji: emojiMap[species] || "🐾",
+        owner: document.getElementById('reg-owner').value.trim(),
+        gaushala: document.getElementById('reg-gaushala').value.trim(),
+        maskedPhone: masked,
+        vaccine: vax,
+        vaccineOk: vax.includes("Done"),
+        nextDue: "19 Nov 2027",
+        blocked: false,
+        scans: 1
+      };
+
+      animals.unshift(newAnimal);
+      e.target.reset();
+      openInScanner(newId);
+    }
+
+    // Initialize App
+    renderSelector();
+    selectAnimal("PT-101");
+  </script>
+</body>
+</html>
